@@ -1,0 +1,59 @@
+! ASW-IOT - configuration script applied through the Packet Tracer IOS CLI (Paste) on 29 Oct 2026.
+! This is the script that was entered, not a 'show running-config' export. Lab-only credentials: change before reuse.
+!
+enable
+configure terminal
+hostname ASW-IOT
+no ip domain-lookup
+ip domain-name pu.internal
+service password-encryption
+enable secret PULab2026
+username netadmin privilege 15 secret PULab2026
+banner motd #Authorized access only - Premier University campus network (simulation)#
+vlan 70
+ name IOT
+vlan 98
+ name MGMT-ACAD
+vlan 998
+ name PARKING
+vlan 999
+ name NATIVE
+exit
+interface FastEthernet0/1
+ description Trunk to DSW-ACAD G1/0/5
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 70,98,999
+ switchport nonegotiate
+interface range FastEthernet0/2 - 5
+ description Smart campus IoT devices
+ switchport mode access
+ switchport access vlan 70
+ switchport port-security
+ switchport port-security maximum 1
+ switchport port-security mac-address sticky
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+interface range FastEthernet0/6 - 24 , GigabitEthernet0/1 - 2
+ switchport mode access
+ switchport access vlan 998
+ shutdown
+interface Vlan1
+ shutdown
+interface Vlan98
+ ip address 10.10.4.68 255.255.255.240
+ no shutdown
+ip default-gateway 10.10.4.65
+ip access-list standard MGMT-ONLY
+ permit 10.10.4.64 0.0.0.31
+line con 0
+ logging synchronous
+line vty 0 15
+ access-class MGMT-ONLY in
+ login local
+ transport input ssh
+exit
+crypto key generate rsa general-keys modulus 1024
+ip ssh version 2
+end
+write memory

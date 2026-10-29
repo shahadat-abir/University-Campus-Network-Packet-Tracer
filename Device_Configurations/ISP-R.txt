@@ -1,0 +1,18 @@
+! ISP-R - configuration script applied through the Packet Tracer IOS CLI (Paste) on 29 Oct 2026.
+! This is the script that was entered, not a 'show running-config' export. Lab-only credentials: change before reuse.
+!
+enable
+configure terminal
+hostname ISP-R
+no ip domain-lookup
+banner motd #Simulated ISP router - CSE 3568 campus network project#
+interface GigabitEthernet0/0
+ description WAN link to campus R-EDGE G0/0
+ ip address 203.0.113.1 255.255.255.248
+ no shutdown
+interface GigabitEthernet0/1
+ description Simulated Internet server LAN
+ ip address 198.51.100.1 255.255.255.0
+ no shutdown
+end
+write memory

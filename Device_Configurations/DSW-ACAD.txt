@@ -1,0 +1,128 @@
+! DSW-ACAD - configuration script applied through the Packet Tracer IOS CLI (Paste) on 29 Oct 2026.
+! This is the script that was entered, not a 'show running-config' export. Lab-only credentials: change before reuse.
+!
+enable
+configure terminal
+hostname DSW-ACAD
+no ip domain-lookup
+ip domain-name pu.internal
+service password-encryption
+enable secret PULab2026
+username netadmin privilege 15 secret PULab2026
+banner motd #Authorized access only - Premier University campus network (simulation)#
+ip routing
+ipv6 unicast-routing
+ipv6 router ospf 10
+ router-id 10.10.254.2
+exit
+vlan 30
+ name ACAD-LAB
+vlan 40
+ name STU-WIFI
+vlan 50
+ name LIBRARY
+vlan 70
+ name IOT
+vlan 98
+ name MGMT-ACAD
+vlan 998
+ name PARKING
+vlan 999
+ name NATIVE
+exit
+interface Loopback0
+ description OSPF router-ID
+ ip address 10.10.254.2 255.255.255.255
+interface GigabitEthernet1/0/1
+ description L1 to R-EDGE G0/1
+ no switchport
+ ip address 10.10.255.2 255.255.255.252
+ no shutdown
+interface GigabitEthernet1/0/2
+ description L3 inter-block link
+ no switchport
+ ip address 10.10.255.9 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:FF00::1/64
+ ipv6 ospf 10 area 0
+ no shutdown
+interface range GigabitEthernet1/0/3 - 5
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport nonegotiate
+ no shutdown
+interface GigabitEthernet1/0/3
+ description Trunk to ASW-LAB Fa0/1
+ switchport trunk allowed vlan 30,98,999
+interface GigabitEthernet1/0/4
+ description Trunk to ASW-LIB Fa0/1
+ switchport trunk allowed vlan 40,50,98,999
+interface GigabitEthernet1/0/5
+ description Trunk to ASW-IOT Fa0/1
+ switchport trunk allowed vlan 70,98,999
+interface range GigabitEthernet1/0/6 - 24
+ switchport mode access
+ switchport access vlan 998
+ shutdown
+ip access-list extended STUDENT-IN
+ permit udp any any eq bootps
+ permit tcp any 10.10.3.0 0.0.0.127 established
+ permit icmp any 10.10.3.0 0.0.0.127 echo-reply
+ deny ip any 10.10.3.0 0.0.0.127
+ deny ip any 10.10.3.192 0.0.0.63
+ deny ip any 10.10.4.0 0.0.0.31
+ deny ip any 10.10.4.64 0.0.0.31
+ permit ip any any
+ip access-list extended IOT-PROTECT
+ permit udp any any eq bootps
+ permit ip 10.10.4.0 0.0.0.31 host 10.10.4.36
+ permit icmp 10.10.4.0 0.0.0.31 10.10.4.64 0.0.0.31 echo-reply
+ deny ip any any
+interface Vlan30
+ description Gateway ACAD-LAB
+ ip address 10.10.2.1 255.255.255.0
+ ip helper-address 10.10.4.34
+ ip access-group STUDENT-IN in
+ no shutdown
+interface Vlan40
+ description Gateway STU-WIFI
+ ip address 10.10.0.1 255.255.254.0
+ ip helper-address 10.10.4.34
+ ip access-group STUDENT-IN in
+ no shutdown
+interface Vlan50
+ description Gateway LIBRARY dual-stack
+ ip address 10.10.3.129 255.255.255.192
+ ip helper-address 10.10.4.34
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:ACAD:50::1/64
+ ipv6 ospf 10 area 0
+ no shutdown
+interface Vlan70
+ description Gateway IOT
+ ip address 10.10.4.1 255.255.255.224
+ ip helper-address 10.10.4.34
+ ip access-group IOT-PROTECT in
+ no shutdown
+interface Vlan98
+ description Management ACAD block
+ ip address 10.10.4.65 255.255.255.240
+ no shutdown
+router ospf 10
+ router-id 10.10.254.2
+ passive-interface default
+ no passive-interface GigabitEthernet1/0/1
+ no passive-interface GigabitEthernet1/0/2
+ network 10.10.0.0 0.0.255.255 area 0
+ip access-list standard MGMT-ONLY
+ permit 10.10.4.64 0.0.0.31
+line con 0
+ logging synchronous
+line vty 0 4
+ access-class MGMT-ONLY in
+ login local
+ transport input ssh
+exit
+crypto key generate rsa general-keys modulus 1024
+ip ssh version 2
+end
+write memory

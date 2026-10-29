@@ -1,0 +1,100 @@
+! DSW-ADMIN - configuration script applied through the Packet Tracer IOS CLI (Paste) on 29 Oct 2026.
+! This is the script that was entered, not a 'show running-config' export. Lab-only credentials: change before reuse.
+!
+enable
+configure terminal
+hostname DSW-ADMIN
+no ip domain-lookup
+ip domain-name pu.internal
+service password-encryption
+enable secret PULab2026
+username netadmin privilege 15 secret PULab2026
+banner motd #Authorized access only - Premier University campus network (simulation)#
+ip routing
+ipv6 unicast-routing
+ipv6 router ospf 10
+ router-id 10.10.254.3
+exit
+vlan 10
+ name ADMIN
+vlan 20
+ name FACULTY
+vlan 60
+ name SERVERS
+vlan 99
+ name MGMT-ADMIN
+vlan 998
+ name PARKING
+vlan 999
+ name NATIVE
+exit
+interface Loopback0
+ description OSPF router-ID
+ ip address 10.10.254.3 255.255.255.255
+interface GigabitEthernet1/0/1
+ description L2 to R-EDGE G0/2
+ no switchport
+ ip address 10.10.255.6 255.255.255.252
+ no shutdown
+interface GigabitEthernet1/0/2
+ description L3 inter-block link
+ no switchport
+ ip address 10.10.255.10 255.255.255.252
+ ipv6 address 2001:DB8:ACAD:FF00::2/64
+ ipv6 ospf 10 area 0
+ no shutdown
+interface range GigabitEthernet1/0/3 - 4
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport nonegotiate
+ no shutdown
+interface GigabitEthernet1/0/3
+ description Trunk to ASW-ADMIN Fa0/1
+ switchport trunk allowed vlan 10,20,99,999
+interface GigabitEthernet1/0/4
+ description Trunk to ASW-DC Fa0/1
+ switchport trunk allowed vlan 60,99,999
+interface range GigabitEthernet1/0/5 - 24
+ switchport mode access
+ switchport access vlan 998
+ shutdown
+interface Vlan10
+ description Gateway ADMIN-REGISTRAR
+ ip address 10.10.3.193 255.255.255.192
+ ip helper-address 10.10.4.34
+ no shutdown
+interface Vlan20
+ description Gateway FACULTY
+ ip address 10.10.3.1 255.255.255.128
+ ip helper-address 10.10.4.34
+ no shutdown
+interface Vlan60
+ description Gateway SERVERS dual-stack
+ ip address 10.10.4.33 255.255.255.240
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:ACAD:60::1/64
+ ipv6 ospf 10 area 0
+ no shutdown
+interface Vlan99
+ description Management ADMIN block
+ ip address 10.10.4.81 255.255.255.240
+ no shutdown
+router ospf 10
+ router-id 10.10.254.3
+ passive-interface default
+ no passive-interface GigabitEthernet1/0/1
+ no passive-interface GigabitEthernet1/0/2
+ network 10.10.0.0 0.0.255.255 area 0
+ip access-list standard MGMT-ONLY
+ permit 10.10.4.64 0.0.0.31
+line con 0
+ logging synchronous
+line vty 0 4
+ access-class MGMT-ONLY in
+ login local
+ transport input ssh
+exit
+crypto key generate rsa general-keys modulus 1024
+ip ssh version 2
+end
+write memory

@@ -1,0 +1,66 @@
+! R-EDGE - configuration script applied through the Packet Tracer IOS CLI (Paste) on 29 Oct 2026.
+! This is the script that was entered, not a 'show running-config' export. Lab-only credentials: change before reuse.
+!
+enable
+configure terminal
+hostname R-EDGE
+no ip domain-lookup
+ip domain-name pu.internal
+service password-encryption
+enable secret PULab2026
+username netadmin privilege 15 secret PULab2026
+banner motd #Authorized access only - Premier University campus network (simulation)#
+interface Loopback0
+ description OSPF router-ID
+ ip address 10.10.254.1 255.255.255.255
+interface GigabitEthernet0/0
+ description WAN to ISP-R G0/0 (NAT outside)
+ ip address 203.0.113.2 255.255.255.248
+ ip nat outside
+ no shutdown
+interface GigabitEthernet0/1
+ description L1 to DSW-ACAD G1/0/1
+ ip address 10.10.255.1 255.255.255.252
+ ip nat inside
+ no shutdown
+interface GigabitEthernet0/2
+ description L2 to DSW-ADMIN G1/0/1
+ ip address 10.10.255.5 255.255.255.252
+ ip nat inside
+ no shutdown
+router ospf 10
+ router-id 10.10.254.1
+ network 10.10.255.0 0.0.0.3 area 0
+ network 10.10.255.4 0.0.0.3 area 0
+ network 10.10.254.1 0.0.0.0 area 0
+ default-information originate
+ip route 0.0.0.0 0.0.0.0 203.0.113.1
+ip access-list standard NAT-USERS
+ deny 10.10.4.0 0.0.0.31
+ deny 10.10.4.64 0.0.0.31
+ permit 10.10.0.0 0.0.255.255
+ip nat inside source list NAT-USERS interface GigabitEthernet0/0 overload
+ip nat inside source static 10.10.4.35 203.0.113.5
+ip access-list extended EDGE-IN
+ permit tcp any host 203.0.113.5 eq www
+ permit tcp any any established
+ permit udp any eq domain any
+ permit icmp any any echo-reply
+ permit icmp any any unreachable
+ ! "permit icmp any any time-exceeded" was rejected by Packet Tracer 9.0 (keyword not supported) and is NOT in the running config
+ deny ip any any
+interface GigabitEthernet0/0
+ ip access-group EDGE-IN in
+ip access-list standard MGMT-ONLY
+ permit 10.10.4.64 0.0.0.31
+line con 0
+ logging synchronous
+line vty 0 4
+ access-class MGMT-ONLY in
+ login local
+ transport input ssh
+exit
+crypto key generate rsa general-keys modulus 1024
+ip ssh version 2
+end
+write memory

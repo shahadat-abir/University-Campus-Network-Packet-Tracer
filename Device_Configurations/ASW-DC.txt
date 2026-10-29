@@ -1,0 +1,62 @@
+! ASW-DC - configuration script applied through the Packet Tracer IOS CLI (Paste) on 29 Oct 2026.
+! This is the script that was entered, not a 'show running-config' export. Lab-only credentials: change before reuse.
+!
+enable
+configure terminal
+hostname ASW-DC
+no ip domain-lookup
+ip domain-name pu.internal
+service password-encryption
+enable secret PULab2026
+username netadmin privilege 15 secret PULab2026
+banner motd #Authorized access only - Premier University campus network (simulation)#
+vlan 60
+ name SERVERS
+vlan 99
+ name MGMT-ADMIN
+vlan 998
+ name PARKING
+vlan 999
+ name NATIVE
+exit
+interface FastEthernet0/1
+ description Trunk to DSW-ADMIN G1/0/4
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 60,99,999
+ switchport nonegotiate
+interface range FastEthernet0/2 - 3 , FastEthernet0/5 - 6
+ description Data center servers
+ switchport mode access
+ switchport access vlan 60
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+interface FastEthernet0/4
+ description NMS-PC network management workstation
+ switchport mode access
+ switchport access vlan 99
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+interface range FastEthernet0/7 - 24 , GigabitEthernet0/1 - 2
+ switchport mode access
+ switchport access vlan 998
+ shutdown
+interface Vlan1
+ shutdown
+interface Vlan99
+ ip address 10.10.4.83 255.255.255.240
+ no shutdown
+ip default-gateway 10.10.4.81
+ip access-list standard MGMT-ONLY
+ permit 10.10.4.64 0.0.0.31
+line con 0
+ logging synchronous
+line vty 0 15
+ access-class MGMT-ONLY in
+ login local
+ transport input ssh
+exit
+crypto key generate rsa general-keys modulus 1024
+ip ssh version 2
+end
+write memory

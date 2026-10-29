@@ -1,0 +1,27 @@
+End devices and services configured through the Packet Tracer GUI (Config / Services / Desktop tabs)
+=====================================================================================================
+SRV-DHCP-DNS  10.10.4.34/28  GW 10.10.4.33  DNS 10.10.4.34
+  DHCP (service ON). Pools: VLAN10-ADMIN gw 10.10.3.193 start 10.10.3.201 /26 max 54
+                            VLAN20-FACULTY gw 10.10.3.1 start 10.10.3.11 /25 max 116
+                            VLAN30-ACAD-LAB gw 10.10.2.1 start 10.10.2.11 /24 max 244
+                            VLAN40-STU-WIFI gw 10.10.0.1 start 10.10.0.11 /23 max 500
+                            VLAN50-LIBRARY gw 10.10.3.129 start 10.10.3.136 /26 max 55
+                            VLAN70-IOT gw 10.10.4.1 start 10.10.4.11 /27 max 20
+                            (default serverPool left in place; unused because no DHCP clients exist in VLAN 60)
+  DNS (service ON): portal.pu.internal A 10.10.4.35 | iot.pu.internal A 10.10.4.36 | nms.pu.internal A 10.10.4.37
+                    www.internet.sim A 198.51.100.10 | portal6.pu.internal AAAA 2001:DB8:ACAD:60::35
+SRV-WEB       10.10.4.35/28  GW 10.10.4.33 | 2001:DB8:ACAD:60::35/64 GW FE80::1 | HTTP index.html = campus portal page
+SRV-IOT       10.10.4.36/28  GW 10.10.4.33 | IoT registration service ON | account iotadmin / PUIoT2026 (lab only)
+              Rules: R1-Lights-On  IF IOT-MOTION-1 On = true  THEN IOT-LIGHT-1 Status = On
+                     R1-Lights-Off IF IOT-MOTION-1 On = false THEN IOT-LIGHT-1 Status = Off
+                     R2-Fan-High   IF IOT-TEMP-1 Temperature > 30 C THEN IOT-FAN-1 Status = High
+                     R2-Fan-Off    IF IOT-TEMP-1 Temperature < 26 C THEN IOT-FAN-1 Status = Off
+SRV-NMS       10.10.4.37/28  GW 10.10.4.33 | Syslog service ON (no device has been pointed at it yet)
+INTERNET-SRV  198.51.100.10/24 GW 198.51.100.1 | HTTP test page
+NMS-PC        10.10.4.90/28  GW 10.10.4.81  DNS 10.10.4.34 (static)
+PC-LAB1, PC-LAB2, PC-ADMIN1, PC-FAC1: DHCP (leases observed 10.10.2.11, 10.10.2.12, 10.10.3.201, 10.10.3.11)
+PC-LIB1       DHCP IPv4 (10.10.3.136) + static IPv6 2001:DB8:ACAD:50::10/64, gateway FE80::1
+AP-STUDENT    Port 1: SSID PU-STUDENT, WPA2-PSK, AES, passphrase PUStudent2026 (lab only)
+STU-TABLET1, STU-PHONE1: SSID PU-STUDENT WPA2-PSK AES, DHCP (leases 10.10.0.12, 10.10.0.13)
+IoT devices (IOT-MOTION-1, IOT-LIGHT-1, IOT-TEMP-1, IOT-FAN-1): adapter changed to PT-IOT-NM-1CFE (wired),
+              DHCP, IoT Server = Remote Server 10.10.4.36 (iotadmin). IOT-MOTION-1 leased 10.10.4.11.
