@@ -1,0 +1,32 @@
+ID,Area,Test,Method,Expected,Observed,Result,Screenshot(s)
+T01,Routing,OSPF adjacencies,R-EDGE: show ip ospf neighbor,FULL with 10.10.254.2 and 10.10.254.3,Both FULL; DSW-ACAD and DSW-ADMIN each also show 2 FULL neighbours,PASS,"02, 05, 08"
+T02,Routing,All campus subnets learned,R-EDGE: show ip route,O routes for every VLAN subnet + S* default,O routes for 10.10.0.0/23 ... 10.10.4.80/28; S* 0.0.0.0/0 via 203.0.113.1,PASS,04
+T03,IPv6,OSPFv3 adjacency and route,DSW-ACAD: show ipv6 ospf neighbor / show ipv6 route ospf,Neighbour FULL; 2001:DB8:ACAD:60::/64 learned,10.10.254.3 FULL on G1/0/2; O 2001:DB8:ACAD:60::/64 [110/2],PASS,05
+T04,IPv6,End-to-end IPv6,PC-LIB1: ping 2001:DB8:ACAD:60::35,Replies,"4/4 replies, 0% loss",PASS,16
+T05,IPv6,SLAAC on VLAN 50,PC-LIB1 IPv6 = Automatic,Global address from RA,No global address obtained; static 2001:DB8:ACAD:50::10 used instead,FAIL,16
+T06,DHCP,Relay to VLAN 30,PC-LAB1: ipconfig /all,10.10.2.x/24 from 10.10.4.34,"10.10.2.11 /24, gw 10.10.2.1, DHCP server 10.10.4.34, DNS 10.10.4.34",PASS,12
+T07,DHCP,Relay to VLANs 10/20/50,"PC-ADMIN1, PC-FAC1, PC-LIB1 DHCP",Address in own VLAN,"10.10.3.201 /26, 10.10.3.11 /25, 10.10.3.136 /26",PASS,10
+T08,DHCP,Relay to IoT VLAN 70 through IOT-PROTECT,IOT-MOTION-1 DHCP,10.10.4.x/27,10.10.4.11 /27; IOT-PROTECT bootps entry matches,PASS,07
+T09,VLAN/Trunk,VLANs and 802.1Q trunks,"show vlan brief / show interfaces trunk (DSW-ACAD, DSW-ADMIN, ASW-DC)","Correct VLANs; trunks native 999, pruned lists","All VLANs active; trunks on, 802.1q, native 999, allowed lists as designed",PASS,"06, 08, 09"
+T10,Connectivity,Default gateway,PC-LAB1: ping 10.10.2.1,Replies,3/4 replies (first lost to ARP),PASS,13
+T11,DNS/Inter-VLAN,Name resolution + server reach,PC-LAB1: ping portal.pu.internal,"Resolves to 10.10.4.35, replies",Resolved; 3/4 replies (first lost to ARP),PASS,13
+T12,Web,Campus portal,PC-LAB1 browser http://portal.pu.internal,Portal page,Page displayed,PASS,15
+T13,ACL,Student -> Registrar blocked,PC-LAB1: ping 10.10.3.201,Fail,Destination host unreachable from 10.10.2.1; STUDENT-IN deny 10.10.3.192 matches,PASS,"14, 07"
+T14,ACL,Student -> IoT blocked,PC-LAB1: ping 10.10.4.11,Fail,Destination host unreachable; STUDENT-IN deny 10.10.4.0 matches,PASS,"14, 07"
+T15,NAT/PAT,Inside user to Internet,PC-LAB1: ping 198.51.100.10,Replies (ISP has no route to 10.10.0.0/16),4/4 replies; NAT-USERS permit 8 matches; 4 expired dynamic translations,PASS,"13, 02, 03"
+T16,Static NAT,Outside access to portal,INTERNET-SRV browser http://203.0.113.5,Portal page,Page displayed; translation tcp 203.0.113.5:80 <-> 10.10.4.35:80 listed,PASS,"23, 02"
+T17,ACL,Unsolicited inbound ICMP blocked,INTERNET-SRV: ping 203.0.113.5,Fail,Destination host unreachable from 203.0.113.2; EDGE-IN deny matches,PASS,"24, 03"
+T18,Wireless,WPA2-AES association + DHCP,STU-TABLET1 / STU-PHONE1,"Associate, lease 10.10.0.x","Tablet 10.10.0.11 /23 (re-leased; earlier .12), phone 10.10.0.13 /23",PASS,"17, 18"
+T19,Wireless,Wi-Fi client reaches services; ACL applies,"STU-TABLET1: ping portal.pu.internal, ping 10.10.3.201",Portal replies; registrar blocked,Portal 4/4 replies; registrar blocked by 10.10.0.1,PASS,19
+T20,Wireless,Wrong passphrase rejected,Client with wrong key,No association,Not run,NOT TESTED,-
+T21,Management,SSH v2 from management VLAN,"NMS-PC: ssh -l netadmin to R-EDGE, DSW-ACAD, DSW-ADMIN, ASW-DC",Login,Logged in to all four,PASS,"02, 05, 08, 09"
+T22,Management,SSH from non-management host blocked,STU-TABLET1: ssh -l netadmin 10.10.254.1,Refused,% Connection refused by remote host,PASS,19
+T23,Management,Console enable on R-EDGE,R-EDGE CLI tab: enable,Prompt accepts secret,Secret rejected 3x when typed through the remote-control session; same secret works over SSH. Cause not determined.,FAIL,-
+T24,IoT,Devices registered,SRV-IOT dashboard from NMS-PC,4 devices online,"IOT-MOTION-1, IOT-LIGHT-1, IOT-TEMP-1, IOT-FAN-1 online",PASS,20
+T25,IoT,Motion -> light rule,Alt+click IOT-MOTION-1,Light turns On,Light changed from Off to On; dashboard shows motion On,PASS,"20, 22"
+T26,IoT,Temperature -> fan rule,Raise ambient temperature above 30 C,Fan High,Rule configured; ambient temperature not changed,NOT TESTED,21
+T27,Routing,Failover when L3 is shut,"shutdown G1/0/2 on DSW-ACAD, traceroute",Traffic via R-EDGE,Not run,NOT TESTED,-
+T28,ACL,Faculty-initiated session to lab allowed,PC-FAC1 ping PC-LAB1,Replies,Not run,NOT TESTED,-
+T29,Switching,Port-security / BPDU Guard,Connect extra device / switch,Port err-disabled,Configured only,NOT TESTED,-
+T30,File,Native .pkt saved,File > Save / Save As,.pkt written by Packet Tracer,Binary project file saved to E:\COMPUTER_NETWORK_FINAL PROJECT,PASS,-
+T31,File,Reopen .pkt and re-test,File > Open,Topology and configs persist,Not run (file was re-saved after this session's checks),NOT TESTED,-
